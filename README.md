@@ -3,6 +3,7 @@
 
 Surveillance toolkit written in GO. This is a client / server toolkit that allows you to spy on other computers. Nothing to fancy, just sending information over the wire. 
 
+![demo](https://raw.githubusercontent.com/ivanacostarubio/gosurveil/master/demo.gif)
 
 ### Components:
 
