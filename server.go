@@ -5,6 +5,8 @@ Sever Library Gather Data from Clients
 Install
 
 
+TODO: Create machine filder only if not present
+
 Ubuntu:
 
 apt-get install git
@@ -23,6 +25,8 @@ import (
 	"github.com/zenazn/goji/web"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -33,18 +37,31 @@ func check(e error) {
 }
 
 type Log struct {
-	Numero  string `param:"numero"`
-	Message string `param:"message"`
+	Hostname string `param:"hostname"`
+	Message  string `param:"message"`
 }
 
-func timeBasedName() string {
+func createDirectoryForHost(host string) {
+
+	os.Mkdir("."+string(filepath.Separator)+"/tmp/"+host, 0777)
+}
+
+func timeBasedName(host string) string {
+
+	createDirectoryForHost(host)
+
 	t := time.Now()
-	return t.Format("./tmp/20060102150405.png")
+	temp := "./tmp/"
+	fileName := "20060102150405.png"
+	r := temp + host + "/" + fileName
+
+	return t.Format(r)
+
 }
 
-func writeToFile(data string) {
+func writeToFile(data string, host string) {
 
-	f, err := os.Create(timeBasedName())
+	f, err := os.Create(timeBasedName(host))
 	check(err)
 	defer f.Close()
 
@@ -70,16 +87,19 @@ func log(c web.C, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Printf("El Greeat.Message: %s\n", log.Hostname)
 	d1 := []byte(log.Message)
 
+	host := strings.TrimSpace(log.Hostname)
+
 	if len(d1) > 1 {
-		writeToFile(string(d1))
+		writeToFile(string(d1), host)
 		w.WriteHeader(201)
 		return
 	}
 
 	if debug {
-		//  fmt.Printf("El Greeat.Message: %s\n", log.Message)
+		fmt.Printf("El Greeat.Message: %s\n", log.Hostname)
 		//	fmt.Printf("El Great Completo: %s\n", log)
 	}
 

